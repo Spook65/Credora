@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
+    "test": "npm run test --workspace server",
     "typecheck": "npm run typecheck --workspaces",
     "dev:client": "npm run dev --workspace client",
     "dev:server": "npm run dev --workspace server"

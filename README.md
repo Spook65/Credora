@@ -15,12 +15,13 @@ Implemented:
 - Environment configuration with safe defaults
 - Baseline backend protections with CORS and security headers
 - Honest landing shell with a disabled scan control
+- Deterministic public URL validation utility for future scanner inputs
 
 Deferred:
 
 - Website scanning
 - URL fetching
-- SSRF defenses
+- Fetch-time SSRF controls
 - Findings engine
 - Reports
 - Persistence/database
@@ -113,6 +114,12 @@ Typecheck both workspaces:
 npm run typecheck
 ```
 
+Run tests:
+
+```sh
+npm test
+```
+
 Check the backend health endpoint:
 
 ```sh
@@ -125,8 +132,18 @@ Expected response:
 { "status": "ok" }
 ```
 
+## Public URL Validation
+
+Credora has a deterministic pre-fetch URL validation layer for future scanner inputs. It uses the standard `URL` parser, accepts only HTTP and HTTPS, rejects embedded credentials, permits only ports `80` and `443`, rejects obvious local hostnames such as `localhost`, resolves DNS for hostname-based URLs, and checks every resolved IPv4/IPv6 address against the public-network policy.
+
+The validator rejects non-public destinations such as loopback, private, link-local, unique-local, unspecified, multicast, reserved, and other inappropriate address ranges. IP-literal URLs are checked directly instead of bypassing this policy.
+
+This does not determine whether a website's content is malicious or trustworthy. It only determines whether the URL currently satisfies Credora's public-network connection policy. Credora still does not fetch websites.
+
+Validation-time DNS lookup alone does not fully solve DNS rebinding or other time-of-check-to-time-of-use problems. The future fetcher must either connect only to an address that passed validation or revalidate resolution at request time before opening a connection. It must also validate every redirect target before requesting it and must not use unrestricted automatic redirect following.
+
 ## Scanner Security Note
 
-Future URL-scanning work must implement SSRF defenses before fetching any user-supplied URL. At minimum, scanner code must validate public HTTP/HTTPS URLs, reject private/internal/link-local/localhost targets, restrict unsafe ports, enforce timeouts and response-size limits, and revalidate every redirect destination after DNS resolution.
+Future URL-scanning work must keep SSRF defenses in place before fetching any user-supplied URL. At minimum, scanner code must validate public HTTP/HTTPS URLs, reject private/internal/link-local/localhost targets, restrict unsafe ports, enforce timeouts and response-size limits, and revalidate every redirect destination after DNS resolution.
 
-Do not add website fetching until those protections are designed and tested.
+Do not add website fetching until fetch-time protections are designed and tested.
